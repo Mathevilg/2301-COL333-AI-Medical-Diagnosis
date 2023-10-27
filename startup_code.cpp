@@ -116,7 +116,7 @@ public:
 // get the node at nth index
     list<Graph_Node>::iterator get_nth_node(int n)
     {
-       list<Graph_Node>::iterator listIt;
+        list<Graph_Node>::iterator listIt;
         int count=0;
         for(listIt=Pres_Graph.begin();listIt!=Pres_Graph.end();listIt++)
         {
@@ -264,6 +264,22 @@ int main()
 	Alarm=read_network();
     
 // Example: to do something
+	
+	ifstream myfile("records.dat");
+	string line;
+	string temp;
+	if (myfile.is_open()) {
+		while (! myfile.eof() ){
+			stringstream ss;
+      		getline (myfile,line);
+      		ss.str(line);
+      		while (ss>>temp) {
+				cout << temp << " " ;
+			}
+			cout << "\n\n\n";
+		}
+		
+	}
 	cout<<"Perfect! Hurrah! \n";
 	
 }
