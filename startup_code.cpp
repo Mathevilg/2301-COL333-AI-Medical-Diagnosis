@@ -358,7 +358,7 @@ int main()
 	for (int i=0; i<1; i++){
 		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
 
-		map<pair<int,int>, vector<double>> record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
+		map<pair<int,int>, vector<double> > record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
 		bug(records.size());
 		// evaluate through all the data in the records
 		bug(i);
@@ -425,32 +425,63 @@ int main()
 					}
 					print(cur_prob);
 					//update these expected values of kth variable in whichever data structure we will be using in M of EM
-					record_p[{j,k}] = cur_prob;
+					// record_p[{j,k}] = cur_prob;
 					//now whenever unknown[j][k] is to be counted , we use cur_prob
-					// !!............. TODO............... !!
-					//SET "?" to either max or coin_toss among the nValues here
 				}
 			}
 		}
 		// given all data, update the CPT
 		//PSEUDO CODE:
 		//for each row in records.dat -> Update each cpt ke -> nValues(?) rows ke counts.
-		vector<vector<float>> cpt_counts;
+		vector<vector<float> > cpt_counts;
 		for(int j=0; j<numVar; j++)
 		{
 			Graph_Node g = *Alarm.get_nth_node(j);
 			vector<float> cpt_count( g.get_CPT().size() , 0.0);
 			cpt_counts.push_back(cpt_count);
 		}
-		for(int j=0; j<records.size(); j++)
-		{
-			for(int k=0; k<numVar; k++)
-			{
-				//update CPT[kth var] here
-				Graph_Node cur = *Alarm.get_nth_node(k);
-				vector<string> parents = cur.get_Parents();
-				
+		for(int k=0; k<numVar; k++){	
+			//update CPT[kth var] here
+			Graph_Node cur = *Alarm.get_nth_node(k);
+			vector<string> parents = cur.get_Parents();
+			// for each possible permutation of parent values, compute each entry of the cpt for cur variable.
+			vector<int> parents_nvalues;
+			vector<int> parents_index;
+			int num_of_perm = 1;
+			for (auto par : parents) {
+				int nval = (*(Alarm.search_node(par))).get_nvalues();
+				int a = Alarm.get_index(par);
+				parents_index.push_back(a);
+				num_of_perm *= nval;
+				parents_nvalues.push_back(nval);
 			}
+			reverse(parents_nvalues.begin(), parents_nvalues.end());
+			vector<float> new_CPT;
+			for (int i=0; i++; i<num_of_perm) {
+				vector<int> perm;
+				for (auto p :parents_nvalues) {
+					perm.push_back(i%p);
+				}
+				reverse(perm.begin(), perm.end());
+				// now update (n-i)th value of the CPT table
+				int consistent_count = 0;
+				for (auto data : records) {
+					bool possible = true;
+					int mm = 0;
+					for (auto indx : parents_index) {
+						if (data[indx]==(*(Alarm.get_nth_node(indx))).get_values()[perm[mm]]) continue;
+						else {
+							possible = false;
+							break;
+						}
+						mm++;
+					}
+					if (possible) consistent_count++;
+				}
+				new_CPT.push_back(consistent_count/records.size());
+				// for (int pos = cur.get_nvalues()-1; pos>=0; pos--){}
+			}
+			Alarm.get_nth_node(k)->set_CPT(new_CPT);
 		}
 	}
 
