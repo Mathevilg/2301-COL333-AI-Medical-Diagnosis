@@ -310,6 +310,51 @@ int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex, vecto
 	return cpt_index;
 }
 
+int write_ans(network &Alarm)
+{
+	std::ifstream inputFile("alarm.bif");
+    std::ofstream outputFile("solved_alarm.bif");
+	int numvar = Alarm.netSize();
+	if (!inputFile) {
+        std::cerr << "Error: Could not open input file 'alarm.bif'\n";
+        return 1;
+    }
+
+    if (!outputFile) {
+        std::cerr << "Error: Could not create output file 'solved_alarm.bif'\n";
+        return 1;
+    }
+
+    std::string line;
+	int j = 0;
+    while (std::getline(inputFile, line)) {
+        // Check if the line starts with the word "table"
+
+        size_t pos = line.find_first_not_of(" \t");
+        if (pos != std::string::npos && line.substr(pos).find("table") == 0) {
+            // Replace the line with the custom line
+            outputFile << "table ";
+			vector<float> cpt = Alarm.get_nth_node(j)->get_CPT();
+			for(int k=0; k<numvar; k++)
+			{
+				outputFile << std::fixed << std::setprecision(4) << cpt[k] << " ";
+			}
+			outputFile<<";"<<'\n';
+			j++;
+        } else {
+            // Write the original line to the output file
+            outputFile << line << std::endl;
+        }
+    }
+
+    std::cout << "Customized file 'solved_alarm.bif' has been created successfully.\n";
+
+    // Close the file streams
+    inputFile.close();
+    outputFile.close();
+	return 0;
+}
+
 int main()
 {
 	network Alarm;
@@ -359,7 +404,7 @@ int main()
 	for (int i=0; i<1; i++){
 		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
 
-		map<pair<int,int>, vector<double> > record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
+		// map<pair<int,int>, vector<double> > record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
 		bug(records.size());
 		// evaluate through all the data in the records
 		bug(i);
@@ -428,10 +473,6 @@ int main()
 					}
 					print(cur_prob);
 					records[j][k] = cur_var.get_values()[mxindex];
-					//update these expected values of kth variable in whichever data structure we will be using in M of EM
-					// record_p[{j,k}] = cur_prob;
-					//now whenever unknown[j][k] is to be counted , we use cur_prob
-					
 				}
 			}
 		}
@@ -462,6 +503,7 @@ int main()
 					j /= p;
 				}
 				reverse(perm.begin(), perm.end());
+				print(perm);
 				// now update (n-i)th value of the CPT table
 				int consistent_count = 0;
 				for (auto data : records) {
@@ -477,14 +519,15 @@ int main()
 					}
 					if (possible) consistent_count++;
 				}
-				new_CPT.push_back(consistent_count/records.size());
+				new_CPT.push_back((float)consistent_count/(float)records.size());
 				// for (int pos = cur.get_nvalues()-1; pos>=0; pos--){}
 			}
+			print(new_CPT);
 			Alarm.get_nth_node(k)->set_CPT(new_CPT);
 		}
 	}
 
-
+	int ans = write_ans(Alarm);
 	cout<<"Perfect! Hurrah! \n";
 	
 }
