@@ -431,7 +431,25 @@ int main()
 			}
 		}
 		// given all data, update the CPT
-		bug(i);
+		//PSEUDO CODE:
+		//for each row in records.dat -> Update each cpt ke -> nValues(?) rows ke counts.
+		vector<vector<float>> cpt_counts;
+		for(int j=0; j<numVar; j++)
+		{
+			Graph_Node g = *Alarm.get_nth_node(j);
+			vector<float> cpt_count( g.get_CPT().size() , 0.0);
+			cpt_counts.push_back(cpt_count);
+		}
+		for(int j=0; j<records.size(); j++)
+		{
+			for(int k=0; k<numVar; k++)
+			{
+				//update CPT[kth var] here
+				Graph_Node cur = *Alarm.get_nth_node(k);
+				vector<string> parents = cur.get_Parents();
+				
+			}
+		}
 	}
 
 
