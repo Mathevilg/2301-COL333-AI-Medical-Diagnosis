@@ -269,16 +269,17 @@ int valueIndex(Graph_Node g, string value)
 	return -1;
 }
 //returns which index to choose inside CPT of var, if its current Value has valIndex and its parents are set as row_record
-int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex)
+int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex, vector<Graph_Node> par_nodes, vector<int> parPos)
 {
 	vector<string> parents = (var).get_Parents();
 	int numVal = var.get_nvalues();
 	vector<int> value_indices;
 	vector<int> totalValues;
-	for(auto par: parents)
+	for(int i=0; i<parents.size(); i++)
 	{
-		int par_pos = Alarm.get_index(par); //this is the position in Alarm.bif
-		Graph_Node par_node = *Alarm.search_node(par);
+		string par = parents[i];
+		int par_pos = parPos[i]; //this is the position in Alarm.bif
+		Graph_Node par_node = par_nodes[i];
 		int ind = valueIndex(par_node, row_record[par_pos]);
 		value_indices.push_back(ind);
 		totalValues.push_back(par_node.get_nvalues());
@@ -347,16 +348,17 @@ int main()
 				// if found a (?) we need to allot it some discrete value
 				if (unknown[j][k]) {
 					// find the markov blanket
-					Graph_Node cur_var = Alarm.get_nth_node(k);
+					Graph_Node cur_var = *Alarm.get_nth_node(k);
 					vector<string> parents = (cur_var).get_Parents();
-					vector<int> children = (*it).get_children();
-					set<int> mb_par, mb_chil;
-					for (int x=0; x++; x<parents.size()){
-						mb_par.insert(Alarm.get_index(parents[x]));
-					}
-					for (int x=0; x++; x<children.size()){
-						list<Graph_Node>::iterator child = Alarm.get_nth_node(children[x]);
-						mb_chil.insert(children[i]);
+
+					vector<int> children = (cur_var).get_children();
+					vector <Graph_Node> par_nodes;
+					vector<int> par_pos;
+					for(auto par: parents)
+					{
+						Graph_Node par_node = *(Alarm.search_node(par));
+						par_nodes.push_back(par_node);
+						par_pos.push_back(Alarm.get_index(par));
 					}
 					// we have found the markov blanket (mb) of (?) data, now calc prob.
 					int numVal = cur_var.get_nvalues();
@@ -366,16 +368,25 @@ int main()
 					for(int valPos=0; valPos < numVal; valPos++)
 					{
 						//P(x = valPos)
-						int cpt_index = get_CPTindex(records[j], cur_var, valPos);
+						int cpt_index = get_CPTindex(records[j], cur_var, valPos, par_nodes, par_pos);
 						//now we know which index to check inside cpt of cur_var for given row.
 						double prob = cur_cpt[cpt_index];
 						//now multiply with each child's P(child | parents(child))
 						for(int child: children)
 						{
-							Graph_Node child_node = Alarm.get_nth_node(child);
+							Graph_Node child_node = *Alarm.get_nth_node(child);
 							string childVal = records[j][child];
 							int childValIndex = valueIndex(child_node, childVal);
-							int cpt_child_index = get_CPTindex(records[j], child_node, childValIndex);
+							vector<string> child_pars = (child_node).get_Parents();
+							vector<Graph_Node> child_par_nodes;
+							vector<int> child_par_pos;
+							for(auto childPar: child_pars)
+							{
+								Graph_Node par_node = *(Alarm.search_node(childPar));
+								child_par_nodes.push_back(par_node);
+								child_par_pos.push_back(Alarm.get_index(childPar));
+							}
+							int cpt_child_index = get_CPTindex(records[j], child_node, childValIndex, child_par_nodes, child_par_pos);
 							prob*=cur_cpt[cpt_child_index];
 						}
 						cur_prob.push_back(prob);
@@ -390,9 +401,6 @@ int main()
 				}
 			}
 		}
-
-
-
 		// given all data, update the CPT
 	}
 
