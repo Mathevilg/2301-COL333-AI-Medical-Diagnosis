@@ -427,6 +427,8 @@ int main()
 					//update these expected values of kth variable in whichever data structure we will be using in M of EM
 					record_p[{j,k}] = cur_prob;
 					//now whenever unknown[j][k] is to be counted , we use cur_prob
+					// !!............. TODO............... !!
+					//SET "?" to either max or coin_toss among the nValues here
 				}
 			}
 		}
