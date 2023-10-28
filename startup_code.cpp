@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
+#include <set>
 
 
 // Format checker just assumes you have Alarm.bif and Solved_Alarm.bif (your file) in current directory
@@ -256,12 +257,6 @@ network read_network()
   	return Alarm;
 }
 
-// vector <Graph_Node> blanket(Graph_Node node) {
-// 	vector<string> parents = node.get_Parents();
-// 	vector<int> children = node.get_children();
-
-
-// }
 
 
 int main()
@@ -275,7 +270,7 @@ int main()
 	string line;
 	string temp;
 	vector<vector<string> > records; // records is a matrix of data
-	vector<vector<bool> > unknowns; // unknowns is a matrix, if ele==true then corresponsinf data is unknown (?)
+	vector<vector<bool> > unknown; // unknowns is a matrix, if ele==true then corresponsinf data is unknown (?)
 	if (myfile.is_open()) {
 		while (! myfile.eof() ){
 			stringstream ss;
@@ -290,14 +285,14 @@ int main()
 				else l2.push_back(false);
 			}
 			records.push_back(l1);
-			unknowns.push_back(l2);
+			unknown.push_back(l2);
 			// cout << "\n\n\n";
 		}
 		
 	}
 
 	// Lets first initialize the probabilities by replacing -1 by "1/n"
-	for (std::list<Graph_Node>::iterator it = Alarm.Pres_Graph.begin(); it != Alarm.Pres_Graph.end(); ++it) {
+	for (list<Graph_Node>::iterator it = Alarm.Pres_Graph.begin(); it != Alarm.Pres_Graph.end(); ++it) {
         int s = (*it).get_CPT().size();
 		vector<float> new_CPT;
 		for (int i=0; i++; i<s) {
@@ -305,6 +300,47 @@ int main()
 		}
 		(*it).set_CPT(new_CPT);
     }
+
+	// Running expectation minimization (EM)
+	for (int i=0; i<1; i++){
+		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
+		
+
+		// evaluate through all the data in the records
+		for (int j=0; j++; j<records.size()){
+			for (int k=0; k++; k<records[i].size()){
+				// if found a (?) we need to allot it some discrete value
+				if (unknown[j][k]) {
+					// find the markov blanket
+					list<Graph_Node>::iterator it = Alarm.search_node(records[j][k]);
+					vector<string> parents = (*it).get_Parents();
+					vector<int> children = (*it).get_children();
+					set<int> mb;
+					for (int x=0; x++; x<parents.size()){
+						mb.insert(Alarm.get_index(parents[x]));
+					}
+					for (int x=0; x++; x<children.size()){
+						list<Graph_Node>::iterator child = Alarm.get_nth_node(children[x]);
+						mb.insert(children[i]);
+						vector<string> childs_parents = (*child).get_Parents();
+						for (int y=0; y++; y<childs_parents.size()) {
+							mb.insert(Alarm.get_index(childs_parents[y]));
+						}
+					}
+
+					// we have found the markov blanket (mb) of (?) data, now calc prob.
+
+
+				}
+			}
+		}
+
+
+
+		// given all data, update the CPT
+	}
+
+
 	cout<<"Perfect! Hurrah! \n";
 	
 }
