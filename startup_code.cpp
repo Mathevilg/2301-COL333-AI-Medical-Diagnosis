@@ -8,6 +8,7 @@
 #include <set>
 #include <map>
 #include <cstring>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -431,15 +432,7 @@ int main()
 			}
 		}
 		// given all data, update the CPT
-		//PSEUDO CODE:
-		//for each row in records.dat -> Update each cpt ke -> nValues(?) rows ke counts.
-		vector<vector<float> > cpt_counts;
-		for(int j=0; j<numVar; j++)
-		{
-			Graph_Node g = *Alarm.get_nth_node(j);
-			vector<float> cpt_count( g.get_CPT().size() , 0.0);
-			cpt_counts.push_back(cpt_count);
-		}
+		
 		for(int k=0; k<numVar; k++){	
 			//update CPT[kth var] here
 			Graph_Node cur = *Alarm.get_nth_node(k);
@@ -457,7 +450,7 @@ int main()
 			}
 			reverse(parents_nvalues.begin(), parents_nvalues.end());
 			vector<float> new_CPT;
-			for (int i=0; i++; i<num_of_perm) {
+			for (int ii=0;  ii<num_of_perm; ii++) {
 				vector<int> perm;
 				for (auto p :parents_nvalues) {
 					perm.push_back(i%p);
