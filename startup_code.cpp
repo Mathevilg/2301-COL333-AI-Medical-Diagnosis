@@ -420,14 +420,18 @@ int main()
 						sum_prob+=prob;
 					}
 					//Now normalise cur_prob 
+					int mxindex = 0;
 					for(int valPos = 0; valPos < numVal; valPos++)
 					{
 						cur_prob[valPos] /= sum_prob;
+						if(cur_prob[valPos] > cur_prob[mxindex]) mxindex = valPos;
 					}
 					print(cur_prob);
+					records[j][k] = cur_var.get_values()[mxindex];
 					//update these expected values of kth variable in whichever data structure we will be using in M of EM
 					// record_p[{j,k}] = cur_prob;
 					//now whenever unknown[j][k] is to be counted , we use cur_prob
+					
 				}
 			}
 		}
