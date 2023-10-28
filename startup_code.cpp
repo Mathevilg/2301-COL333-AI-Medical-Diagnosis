@@ -493,6 +493,11 @@ int main()
 				num_of_perm *= nval;
 				parents_nvalues.push_back(nval);
 			}
+			
+			parents_index.push_back(k);
+			num_of_perm *= cur.get_nvalues();
+			parents_nvalues.push_back(cur.get_nvalues());
+
 			reverse(parents_nvalues.begin(), parents_nvalues.end());
 			vector<float> new_CPT;
 			for (int ii=0;  ii<num_of_perm; ii++) {
