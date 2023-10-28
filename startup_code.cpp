@@ -452,8 +452,10 @@ int main()
 			vector<float> new_CPT;
 			for (int ii=0;  ii<num_of_perm; ii++) {
 				vector<int> perm;
+				int j=ii;
 				for (auto p :parents_nvalues) {
-					perm.push_back(i%p);
+					perm.push_back(j%p);
+					j /= p;
 				}
 				reverse(perm.begin(), perm.end());
 				// now update (n-i)th value of the CPT table
