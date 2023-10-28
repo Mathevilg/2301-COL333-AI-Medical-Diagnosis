@@ -361,15 +361,31 @@ int main()
 					int numVal = cur_var.get_nvalues();
 					vector<double> cur_prob;
 					vector<float> cur_cpt = cur_var.get_CPT();
+					double sum_prob = 0;
 					for(int valPos=0; valPos < numVal; valPos++)
 					{
 						//P(x = valPos)
 						int cpt_index = get_CPTindex(records[j], cur_var, valPos);
 						//now we know which index to check inside cpt of cur_var for given row.
 						double prob = cur_cpt[cpt_index];
-						
+						//now multiply with each child's P(child | parents(child))
+						for(int child: children)
+						{
+							Graph_Node child_node = Alarm.get_nth_node(child);
+							string childVal = records[j][child];
+							int childValIndex = valueIndex(child_node, childVal);
+							int cpt_child_index = get_CPTindex(records[j], child_node, childValIndex);
+							prob*=cur_cpt[cpt_child_index];
+						}
+						cur_prob.push_back(prob);
+						sum_prob+=prob;
 					}
-
+					//Now normalise cur_prob 
+					for(int valPos = 0; valPos < numVal; valPos++)
+					{
+						cur_prob[valPos] /= sum_prob;
+					}
+					//update these expected values of kth variable in whichever data structure we will be using in M of EM
 				}
 			}
 		}
