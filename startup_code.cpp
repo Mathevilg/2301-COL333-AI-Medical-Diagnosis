@@ -405,6 +405,7 @@ int main()
 							vector<string> child_pars = (child_node).get_Parents();
 							vector<Graph_Node> child_par_nodes;
 							vector<int> child_par_pos;
+							vector<float> cur_child_cpt = child_node.get_CPT();
 							for(auto childPar: child_pars)
 							{
 								Graph_Node par_node = *(Alarm.search_node(childPar));
@@ -412,7 +413,7 @@ int main()
 								child_par_pos.push_back(Alarm.get_index(childPar));
 							}
 							int cpt_child_index = get_CPTindex(records[j], child_node, childValIndex, child_par_nodes, child_par_pos);
-							prob*=cur_cpt[cpt_child_index];
+							prob*=cur_child_cpt[cpt_child_index];
 						}
 						cur_prob.push_back(prob);
 						sum_prob+=prob;
@@ -422,6 +423,7 @@ int main()
 					{
 						cur_prob[valPos] /= sum_prob;
 					}
+					print(cur_prob);
 					//update these expected values of kth variable in whichever data structure we will be using in M of EM
 					record_p[{j,k}] = cur_prob;
 					//now whenever unknown[j][k] is to be counted , we use cur_prob
