@@ -526,7 +526,7 @@ int main()
 				// for (int pos = cur.get_nvalues()-1; pos>=0; pos--){}
 			}
 			print(new_CPT);
-			cur.set_CPT(new_CPT);
+			Alarm.get_nth_node(k)->set_CPT(new_CPT);
 			vector<float> ncpt = cur.get_CPT();
 			bug(k);
 			print(ncpt);
