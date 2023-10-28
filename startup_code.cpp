@@ -6,7 +6,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <set>
-
+#include<bits/stdc++.h>
 
 // Format checker just assumes you have Alarm.bif and Solved_Alarm.bif (your file) in current directory
 using namespace std;
@@ -257,7 +257,40 @@ network read_network()
   	return Alarm;
 }
 
-
+//returns the index of the value of a particular Variable (eg - X = True is 0th value, X = False is 1st value)
+int valueIndex(Graph_Node g, string value)
+{
+	int numVal = g.get_nvalues();
+	vector<string> poss_values = g.get_values();
+	for(int i=0; i<numVal; i++)
+	{
+		if(poss_values[i] == value) return i;
+	}
+	return -1;
+}
+//returns which index to choose inside CPT of var, if its current Value has valIndex and its parents are set as row_record
+int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex)
+{
+	vector<string> parents = (var).get_Parents();
+	int numVal = var.get_nvalues();
+	vector<int> value_indices;
+	vector<int> totalValues;
+	for(auto par: parents)
+	{
+		int par_pos = Alarm.get_index(par); //this is the position in Alarm.bif
+		Graph_Node par_node = *Alarm.search_node(par);
+		int ind = valueIndex(par_node, row_record[par_pos]);
+		value_indices.push_back(ind);
+		totalValues.push_back(par_node.get_nvalues());
+	}
+	int mult = 1, cpt_index = 0;
+	for(int par_index = parents.size()-1; par_index>=0; par_index--)
+	{
+		cpt_index += (mult*value_indices[par_index]);
+		mult*=totalValues[par_index];
+	}
+	return cpt_index;
+}
 
 int main()
 {
@@ -265,7 +298,7 @@ int main()
 	Alarm=read_network();
     
 // Example: to do something
-	
+	int numVar = Alarm.netSize();
 	ifstream myfile("records.dat");
 	string line;
 	string temp;
@@ -304,32 +337,38 @@ int main()
 	// Running expectation minimization (EM)
 	for (int i=0; i<1; i++){
 		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
-		
+
+		map<pair<int,int>, vector<double>> record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
 
 		// evaluate through all the data in the records
 		for (int j=0; j++; j<records.size()){
-			for (int k=0; k++; k<records[i].size()){
+			for (int k=0; k++; k<numVar){
 				// if found a (?) we need to allot it some discrete value
 				if (unknown[j][k]) {
 					// find the markov blanket
-					list<Graph_Node>::iterator it = Alarm.search_node(records[j][k]);
-					vector<string> parents = (*it).get_Parents();
+					Graph_Node cur_var = Alarm.get_nth_node(k);
+					vector<string> parents = (cur_var).get_Parents();
 					vector<int> children = (*it).get_children();
-					set<int> mb;
+					set<int> mb_par, mb_chil;
 					for (int x=0; x++; x<parents.size()){
-						mb.insert(Alarm.get_index(parents[x]));
+						mb_par.insert(Alarm.get_index(parents[x]));
 					}
 					for (int x=0; x++; x<children.size()){
 						list<Graph_Node>::iterator child = Alarm.get_nth_node(children[x]);
-						mb.insert(children[i]);
-						vector<string> childs_parents = (*child).get_Parents();
-						for (int y=0; y++; y<childs_parents.size()) {
-							mb.insert(Alarm.get_index(childs_parents[y]));
-						}
+						mb_chil.insert(children[i]);
 					}
-
 					// we have found the markov blanket (mb) of (?) data, now calc prob.
-
+					int numVal = cur_var.get_nvalues();
+					vector<double> cur_prob;
+					vector<float> cur_cpt = cur_var.get_CPT();
+					for(int valPos=0; valPos < numVal; valPos++)
+					{
+						//P(x = valPos)
+						int cpt_index = get_CPTindex(records[j], cur_var, valPos);
+						//now we know which index to check inside cpt of cur_var for given row.
+						double prob = cur_cpt[cpt_index];
+						
+					}
 
 				}
 			}
@@ -344,4 +383,3 @@ int main()
 	cout<<"Perfect! Hurrah! \n";
 	
 }
-
