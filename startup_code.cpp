@@ -334,8 +334,8 @@ int write_ans(network &Alarm)
         if (pos != std::string::npos && line.substr(pos).find("table") == 0) {
             // Replace the line with the custom line
             outputFile << "table ";
-			vector<float> cpt = Alarm.get_nth_node(j)->get_CPT();
-			for(int k=0; k<numvar; k++)
+			vector<float> cpt = (*Alarm.get_nth_node(j)).get_CPT();
+			for(int k=0; k<cpt.size(); k++)
 			{
 				outputFile << std::fixed << std::setprecision(4) << cpt[k] << " ";
 			}
@@ -493,13 +493,11 @@ int main()
 				num_of_perm *= nval;
 				parents_nvalues.push_back(nval);
 			}
-			
+			reverse(parents_nvalues.begin(), parents_nvalues.end());
+			vector<float> new_CPT;
 			parents_index.push_back(k);
 			num_of_perm *= cur.get_nvalues();
 			parents_nvalues.push_back(cur.get_nvalues());
-
-			reverse(parents_nvalues.begin(), parents_nvalues.end());
-			vector<float> new_CPT;
 			for (int ii=0;  ii<num_of_perm; ii++) {
 				vector<int> perm;
 				int j=ii;
@@ -508,7 +506,7 @@ int main()
 					j /= p;
 				}
 				reverse(perm.begin(), perm.end());
-				print(perm);
+				// print(perm);
 				// now update (n-i)th value of the CPT table
 				int consistent_count = 0;
 				for (auto data : records) {
@@ -528,7 +526,10 @@ int main()
 				// for (int pos = cur.get_nvalues()-1; pos>=0; pos--){}
 			}
 			print(new_CPT);
-			Alarm.get_nth_node(k)->set_CPT(new_CPT);
+			cur.set_CPT(new_CPT);
+			vector<float> ncpt = cur.get_CPT();
+			bug(k);
+			print(ncpt);
 		}
 	}
 
