@@ -6,10 +6,23 @@
 #include <sstream>
 #include <cstdlib>
 #include <set>
-#include<bits/stdc++.h>
+#include <map>
+#include <cstring>
 
-// Format checker just assumes you have Alarm.bif and Solved_Alarm.bif (your file) in current directory
 using namespace std;
+
+#define bug(...)       __f (#__VA_ARGS__, __VA_ARGS__)
+#define print(a)       for(auto x : a) cout << x << " "; cout << endl
+
+template <typename Arg1>
+void __f (const char* name, Arg1&& arg1) { cout << name << " : " << arg1 << endl; }
+template <typename Arg1, typename... Args>
+void __f (const char* names, Arg1&& arg1, Args&&... args)
+{
+    const char* comma = strchr (names + 1, ',');
+    cout.write (names, comma - names) << " : " << arg1 << " | "; __f (comma + 1, args...);
+}
+// Format checker just assumes you have Alarm.bif and Solved_Alarm.bif (your file) in current directory
 
 // Our graph consists of a list of nodes where each node is represented as follows:
 class Graph_Node{
@@ -285,6 +298,8 @@ int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex, vecto
 		totalValues.push_back(par_node.get_nvalues());
 	}
 	int mult = 1, cpt_index = 0;
+	print(value_indices);
+	print(totalValues);
 	for(int par_index = parents.size()-1; par_index>=0; par_index--)
 	{
 		cpt_index += (mult*value_indices[par_index]);
@@ -316,8 +331,8 @@ int main()
       		while (ss>>temp) {
 				// cout << temp << " " ;
 				l1.push_back(temp);
-				if (temp == "?") l2.push_back(true);
-				else l2.push_back(false);
+				if (temp.size() == 3) {l2.push_back(true); cout<<"yes\n"<<temp;}
+				else {l2.push_back(false); }
 			}
 			records.push_back(l1);
 			unknown.push_back(l2);
@@ -325,13 +340,16 @@ int main()
 		}
 		
 	}
+	else{
+		cout<<"file could not be opened.\n";
+	}
 
 	// Lets first initialize the probabilities by replacing -1 by "1/n"
 	for (list<Graph_Node>::iterator it = Alarm.Pres_Graph.begin(); it != Alarm.Pres_Graph.end(); ++it) {
         int s = (*it).get_CPT().size();
 		vector<float> new_CPT;
-		for (int i=0; i++; i<s) {
-			new_CPT.push_back(1/s);
+		for (int i=0; i<s; i++) {
+			new_CPT.push_back(1.0/(double)s);
 		}
 		(*it).set_CPT(new_CPT);
     }
@@ -341,16 +359,20 @@ int main()
 		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
 
 		map<pair<int,int>, vector<double>> record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
-
+		bug(records.size());
 		// evaluate through all the data in the records
-		for (int j=0; j++; j<records.size()){
-			for (int k=0; k++; k<numVar){
+		bug(i);
+		for (int j=0; j<records.size(); j++){
+			print(unknown[j]);
+			for (int k=0; k<numVar; k++){
 				// if found a (?) we need to allot it some discrete value
 				if (unknown[j][k]) {
+					bug(j, k);
 					// find the markov blanket
 					Graph_Node cur_var = *Alarm.get_nth_node(k);
 					vector<string> parents = (cur_var).get_Parents();
-
+					bug(cur_var.get_name());
+					print(parents);
 					vector<int> children = (cur_var).get_children();
 					vector <Graph_Node> par_nodes;
 					vector<int> par_pos;
@@ -364,12 +386,15 @@ int main()
 					int numVal = cur_var.get_nvalues();
 					vector<double> cur_prob;
 					vector<float> cur_cpt = cur_var.get_CPT();
+					print(cur_cpt);
+					print(par_pos);
 					double sum_prob = 0;
 					for(int valPos=0; valPos < numVal; valPos++)
 					{
 						//P(x = valPos)
 						int cpt_index = get_CPTindex(records[j], cur_var, valPos, par_nodes, par_pos);
 						//now we know which index to check inside cpt of cur_var for given row.
+						bug(valPos, cpt_index);
 						double prob = cur_cpt[cpt_index];
 						//now multiply with each child's P(child | parents(child))
 						for(int child: children)
@@ -398,10 +423,13 @@ int main()
 						cur_prob[valPos] /= sum_prob;
 					}
 					//update these expected values of kth variable in whichever data structure we will be using in M of EM
+					record_p[{j,k}] = cur_prob;
+					//now whenever unknown[j][k] is to be counted , we use cur_prob
 				}
 			}
 		}
 		// given all data, update the CPT
+		bug(i);
 	}
 
 
