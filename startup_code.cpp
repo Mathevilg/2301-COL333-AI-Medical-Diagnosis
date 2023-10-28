@@ -86,9 +86,8 @@ public:
  // The whole network represted as a list of nodes
 class network{
 
-	list <Graph_Node> Pres_Graph;
-
 public:
+	list <Graph_Node> Pres_Graph;
 	int addNode(Graph_Node node)
 	{
 		Pres_Graph.push_back(node);
@@ -257,6 +256,13 @@ network read_network()
   	return Alarm;
 }
 
+// vector <Graph_Node> blanket(Graph_Node node) {
+// 	vector<string> parents = node.get_Parents();
+// 	vector<int> children = node.get_children();
+
+
+// }
+
 
 int main()
 {
@@ -268,18 +274,37 @@ int main()
 	ifstream myfile("records.dat");
 	string line;
 	string temp;
+	vector<vector<string> > records; // records is a matrix of data
+	vector<vector<bool> > unknowns; // unknowns is a matrix, if ele==true then corresponsinf data is unknown (?)
 	if (myfile.is_open()) {
 		while (! myfile.eof() ){
 			stringstream ss;
+			vector<string> l1;
+			vector<bool> l2;
       		getline (myfile,line);
       		ss.str(line);
       		while (ss>>temp) {
-				cout << temp << " " ;
+				// cout << temp << " " ;
+				l1.push_back(temp);
+				if (temp == "?") l2.push_back(true);
+				else l2.push_back(false);
 			}
-			cout << "\n\n\n";
+			records.push_back(l1);
+			unknowns.push_back(l2);
+			// cout << "\n\n\n";
 		}
 		
 	}
+
+	// Lets first initialize the probabilities by replacing -1 by "1/n"
+	for (std::list<Graph_Node>::iterator it = Alarm.Pres_Graph.begin(); it != Alarm.Pres_Graph.end(); ++it) {
+        int s = (*it).get_CPT().size();
+		vector<float> new_CPT;
+		for (int i=0; i++; i<s) {
+			new_CPT.push_back(1/s);
+		}
+		(*it).set_CPT(new_CPT);
+    }
 	cout<<"Perfect! Hurrah! \n";
 	
 }
