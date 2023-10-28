@@ -289,6 +289,7 @@ int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex)
 		cpt_index += (mult*value_indices[par_index]);
 		mult*=totalValues[par_index];
 	}
+	cpt_index+= (mult*valIndex);
 	return cpt_index;
 }
 
