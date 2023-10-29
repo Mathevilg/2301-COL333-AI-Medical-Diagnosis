@@ -493,11 +493,13 @@ int main()
 				num_of_perm *= nval;
 				parents_nvalues.push_back(nval);
 			}
-			reverse(parents_nvalues.begin(), parents_nvalues.end());
-			vector<float> new_CPT;
-			parents_index.push_back(k);
-			num_of_perm *= cur.get_nvalues();
 			parents_nvalues.push_back(cur.get_nvalues());
+			reverse(parents_nvalues.begin(), parents_nvalues.end());
+			parents_index.push_back(k);
+			int cur_nval = cur.get_nvalues();
+			num_of_perm *= cur_nval;
+			
+			vector<float> new_CPT;
 			for (int ii=0;  ii<num_of_perm; ii++) {
 				vector<int> perm;
 				int j=ii;
@@ -506,23 +508,42 @@ int main()
 					j /= p;
 				}
 				reverse(perm.begin(), perm.end());
-				// print(perm);
+				print(perm);
 				// now update (n-i)th value of the CPT table
 				int consistent_count = 0;
+				int conditional_count = 0;
 				for (auto data : records) {
 					bool possible = true;
 					int mm = 0;
 					for (auto indx : parents_index) {
-						if (data[indx]==(*(Alarm.get_nth_node(indx))).get_values()[perm[mm]]) continue;
+						if (data[indx]==(*(Alarm.get_nth_node(indx))).get_values()[perm[mm]]) {
+							mm++;
+							continue;
+						}
 						else {
 							possible = false;
 							break;
 						}
-						mm++;
+						
 					}
 					if (possible) consistent_count++;
+
+					possible = true;
+					for (int mm=0; mm<parents_index.size()-1; mm++) {
+						if (data[parents_index[mm]]==(*(Alarm.get_nth_node(parents_index[mm]))).get_values()[perm[mm]]) {
+							continue;
+						}
+						else {
+							possible = false;
+							break;
+						}
+						
+					}
+					if (possible) conditional_count++;
 				}
-				new_CPT.push_back((float)consistent_count/(float)records.size());
+				cout << "consistent count : " << consistent_count << "\n";
+				cout << "conditional count: " << conditional_count << "\n";
+				new_CPT.push_back(((float)consistent_count + (0.1/(float)cur_nval))/((float)conditional_count+0.1));
 				// for (int pos = cur.get_nvalues()-1; pos>=0; pos--){}
 			}
 			print(new_CPT);
