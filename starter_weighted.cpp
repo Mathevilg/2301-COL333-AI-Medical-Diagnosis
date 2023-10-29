@@ -287,6 +287,7 @@ int valueIndex(Graph_Node g, string value)
 //returns which index to choose inside CPT of var, if its current Value has valIndex and its parents are set as row_record
 int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex, vector<Graph_Node> par_nodes, vector<int> parPos)
 {
+	
 	vector<string> parents = (var).get_Parents();
 	int numVal = var.get_nvalues();
 	vector<int> value_indices;
@@ -296,6 +297,7 @@ int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex, vecto
 		string par = parents[i];
 		int par_pos = parPos[i]; //this is the position in Alarm.bif
 		Graph_Node par_node = par_nodes[i];
+		
 		int ind = valueIndex(par_node, row_record[par_pos]);
 		value_indices.push_back(ind);
 		totalValues.push_back(par_node.get_nvalues());
@@ -308,6 +310,50 @@ int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex, vecto
 		mult*=totalValues[par_index];
 	}
 	cpt_index+= (mult*valIndex);
+	if(cpt_index < 0)
+	{
+		print(value_indices);
+		print(totalValues);
+		print(parents);
+	}
+	return cpt_index;
+}
+
+int get_CPT_childindex(vector<string> &row_record, Graph_Node var, int valIndex, vector<Graph_Node> par_nodes, vector<int> parPos, int XPos, int parValueInd)
+{
+	
+	vector<string> parents = (var).get_Parents();
+	int numVal = var.get_nvalues();
+	vector<int> value_indices;
+	vector<int> totalValues;
+	for(int i=0; i<parents.size(); i++)
+	{
+		string par = parents[i];
+		int par_pos = parPos[i]; //this is the position in Alarm.bif
+		Graph_Node par_node = par_nodes[i];
+		int ind;
+		if(par_pos == XPos)
+		{
+			ind = parValueInd;
+		}
+		else ind = valueIndex(par_node, row_record[par_pos]);
+		value_indices.push_back(ind);
+		totalValues.push_back(par_node.get_nvalues());
+	}
+	int mult = 1, cpt_index = 0;
+	
+	for(int par_index = parents.size()-1; par_index>=0; par_index--)
+	{
+		cpt_index += (mult*value_indices[par_index]);
+		mult*=totalValues[par_index];
+	}
+	cpt_index+= (mult*valIndex);
+	if(cpt_index < 0)
+	{
+		print(value_indices);
+		print(totalValues);
+		print(parents);
+	}
 	return cpt_index;
 }
 
@@ -368,21 +414,27 @@ int main()
 	string temp;
 	vector<vector<string> > records; // records is a matrix of data
 	vector<vector<bool> > unknown; // unknowns is a matrix, if ele==true then corresponsinf data is unknown (?)
+	map<int,int> question_mark_index;
+	int rowc = 0, colc = 0;
 	if (myfile.is_open()) {
+		
 		while (! myfile.eof() ){
 			stringstream ss;
 			vector<string> l1;
 			vector<bool> l2;
       		getline (myfile,line);
       		ss.str(line);
+			colc = 0;
       		while (ss>>temp) {
 				// cout << temp << " " ;
 				l1.push_back(temp);
-				if (temp.size() == 3) {l2.push_back(true); cout<<"yes\n"<<temp;}
+				if (temp.size() == 3) {l2.push_back(true); question_mark_index[rowc] = colc;}
 				else {l2.push_back(false); }
+				colc++;
 			}
 			records.push_back(l1);
 			unknown.push_back(l2);
+			rowc++;
 			// cout << "\n\n\n";
 		}
 		
@@ -402,7 +454,7 @@ int main()
     }
 
 	// Running expectation minimization (EM)
-	for (int i=0; i<4; i++){
+	for (int i=0; i<60; i++){
 		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
 
 		map<int, vector<float> > record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
@@ -414,12 +466,8 @@ int main()
 			for (int k=0; k<numVar; k++){
 				// if found a (?) we need to allot it some discrete value
 				if (unknown[j][k]) {
-					
-					// find the markov blanket
 					Graph_Node cur_var = *Alarm.get_nth_node(k);
 					vector<string> parents = (cur_var).get_Parents();
-					
-					
 					vector<int> children = (cur_var).get_children();
 					vector <Graph_Node> par_nodes;
 					vector<int> par_pos;
@@ -438,10 +486,14 @@ int main()
 					for(int valPos=0; valPos < numVal; valPos++)
 					{
 						//P(x = valPos)
-						int cpt_index = get_CPTindex(records[j], cur_var, valPos, par_nodes, par_pos);
 						//now we know which index to check inside cpt of cur_var for given row.
 						
+						int cpt_index = get_CPTindex(records[j], cur_var, valPos, par_nodes, par_pos);
+						if(cpt_index >= cur_cpt.size() || cpt_index < 0){
+							bug(k, valPos);
+						}
 						float prob = cur_cpt[cpt_index];
+						// bug(prob, numVal, valPos, children.size());
 						//now multiply with each child's P(child | parents(child))
 						for(int child: children)
 						{
@@ -458,11 +510,23 @@ int main()
 								child_par_nodes.push_back(par_node);
 								child_par_pos.push_back(Alarm.get_index(childPar));
 							}
-							int cpt_child_index = get_CPTindex(records[j], child_node, childValIndex, child_par_nodes, child_par_pos);
+							int cpt_child_index = get_CPT_childindex(records[j], child_node, childValIndex, child_par_nodes, child_par_pos, k, valPos);
+							// bug(cur_child_cpt[cpt_child_index]);
+							
+							// bug(prob*cur_child_cpt[cpt_child_index]);
+							if(cur_child_cpt[cpt_child_index] > 1)
+							{
+								bug(cpt_child_index, cur_child_cpt.size(), child, childValIndex, childVal);
+							}
 							prob*=cur_child_cpt[cpt_child_index];
+							if(prob > 1){
+								cout<<"BACHAOOOOOO\n\n\n";
+							}
 						}
 						cur_prob.push_back(prob);
 						sum_prob+=prob;
+						
+						if(isinf(sum_prob)) {bug(sum_prob); print(cur_prob); bug(valPos, j, k);}
 					}
 					//Now normalise cur_prob 
 					
@@ -470,14 +534,63 @@ int main()
 					{
 						if(sum_prob) cur_prob[valPos] /= sum_prob;
 						else cur_prob[valPos] = ((float)1.0/(float)numVal);
+						if(isnan(cur_prob[valPos])) {bug(sum_prob); cout<<"NANANANANANANANANANNANA\n\n\n\n\n\n\n\n\n\n";}
 					}
 					// print(cur_prob);
 					record_p[j] = cur_prob;
+					// bug(j);
+					// print(record_p[j]);
+					for(auto x: record_p[j]){
+						if(isnan(x)) bug(j);
+					}
 				}
 			}
 		}
 		// given all data, update the CPT
 		
+		vector<vector<string>> new_records;
+		vector<float> weights;
+		for(int row=0; row<records.size(); row++)
+		{
+			vector<string> temp;
+			// bug(row);
+			if(question_mark_index.count(row))
+			{	
+				int qmi = question_mark_index[row];
+				// bug(qmi);
+				Graph_Node missing = *Alarm.get_nth_node(qmi);
+				int numval = missing.get_nvalues();
+				vector<string> pos_vals = missing.get_values();
+				for(int jj = 0; jj<numval; jj++)
+				{
+					temp.clear();
+					for(int j = 0; j<numVar; j++)
+					{
+						if(j!=qmi) temp.push_back(records[row][j]);
+						else temp.push_back(pos_vals[jj]);
+					}
+					float w = record_p[row][jj];
+					new_records.push_back(temp);
+					weights.push_back(w);
+					if(isnan(w)) {
+						bug(w, qmi, row, record_p[row][jj]);
+					}
+					// print(temp);
+					// bug(w);
+				}
+			}
+			else{
+				for(int j=0; j<numVar; j++)
+				{
+					temp.push_back(records[row][j]);
+				}
+				new_records.push_back(temp);
+				weights.push_back(1.0);
+			}
+			
+		}
+		bug(new_records.size());
+
 		for(int k=0; k<numVar; k++){
 			Graph_Node cur = *(Alarm.get_nth_node(k));
 			int numVal = cur.get_nvalues();
@@ -493,13 +606,25 @@ int main()
 				par_values_map[Alarm.get_index(par)] = (*Alarm.search_node(par)).get_values();
 			}
 
-			vector<int> numerator(new_CPT.size(),0);
-			vector<int> denom(new_CPT.size(), 0);
-
-			for (auto data : records){
+			vector<float> numerator(new_CPT.size(),0.0);
+			vector<float> denom(new_CPT.size(), 0.0);
+			for(auto x: denom){
+				if(isnan(x))
+				{
+					cout<<"YES\n\n\n\n";
+				}
+			}
+			//same
+			// bug(denom.size());
+			
+			for (int row = 0; row< new_records.size(); row++){
+				vector<string> data = new_records[row];
 				int pos = 0;
 				int multiplier = 1;
 				int iter = 0;
+				float weight = weights[row];
+				
+				
 				reverse(cur_parents_index.begin(), cur_parents_index.end());
 				for (auto index : cur_parents_index) {
 					string value = data[index];
@@ -512,22 +637,26 @@ int main()
 					}
 					if (iter==cur_parents_index.size()-1) {
 						for (int jj = 0; jj<poss_val.size(); jj++) {
-							denom[pos+jj*multiplier]++;
+							denom[pos+jj*multiplier] += weight;
 						}
 					}
 					pos += multiplier*num;
 					multiplier *= poss_val.size();
 					iter++;
+					
 				}
 				reverse(cur_parents_index.begin(), cur_parents_index.end());
-				numerator[pos]++;
+				numerator[pos] += weight;
+				// bug(numerator[pos]);
 			}
-			for (int k=0; k<denom.size(); k++){
-				new_CPT[k] = ((float)numerator[k] + (0.1/(float)numVal))/((float)denom[k]+0.1);
+			for (int kk=0; kk<denom.size(); kk++){
+				new_CPT[kk] = ((float)numerator[kk] + (0.1/(float)numVal))/((float)denom[kk]+0.1);
+				// bug(kk);
+				// bug(numerator[kk], denom[kk]);
 			}
 			Alarm.get_nth_node(k)->set_CPT(new_CPT);
 			
-			cout << "\n";
+			// cout << "\n";
 
 		}
 	}
