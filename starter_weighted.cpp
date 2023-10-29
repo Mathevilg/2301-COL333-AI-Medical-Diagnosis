@@ -404,10 +404,10 @@ int main()
     }
 
 	// Running expectation minimization (EM)
-	for (int i=0; i<50; i++){
+	for (int i=0; i<1; i++){
 		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
 
-		map<int, vector<double>> record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
+		map<int, vector<double> > record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
 		// bug(records.size());
 		// evaluate through all the data in the records
 		// bug(i);
@@ -478,6 +478,22 @@ int main()
 			}
 		}
 		// given all data, update the CPT
+        vector<vector<string> >records_new;
+        vector<float>weights;
+        for (int j=0; j<records.size(); j++){
+            if (record_p.count(j)==0){
+                records_new.push_back(records[i]);
+                weights.push_back(1.0);
+            }
+            else {
+                vector<double>we = record_p[j];
+                for (auto w : we) {
+                    records_new.push_back(records[i]);
+                    weights.push_back((float)w);
+                }
+            }
+        }
+        // print(records_new);
 		
 		for(int k=0; k<numVar; k++){
 			Graph_Node cur = *(Alarm.get_nth_node(k));
@@ -497,7 +513,8 @@ int main()
 			vector<int> numerator(new_CPT.size(),0);
 			vector<int> denom(new_CPT.size(), 0);
 
-			for (auto data : records){
+			for (int in =0; in<records_new.size(); in++){
+                vector<string> data = records_new[in];
 				int pos = 0;
 				int multiplier = 1;
 				int iter = 0;
@@ -513,7 +530,7 @@ int main()
 					}
 					if (iter==cur_parents_index.size()-1) {
 						for (int jj = 0; jj<poss_val.size(); jj++) {
-							denom[pos+jj*multiplier]++;
+							denom[pos+jj*multiplier]+= weights[in];
 						}
 					}
 					pos += multiplier*num;
@@ -521,10 +538,10 @@ int main()
 					iter++;
 				}
 				reverse(cur_parents_index.begin(), cur_parents_index.end());
-				numerator[pos]++;
+				numerator[pos]+= weights[in];
 			}
-			// print(numerator);
-			// print(denom);
+			print(numerator);
+			print(denom);
 			for (int k=0; k<denom.size(); k++){
 				new_CPT[k] = ((float)numerator[k] + (0.1/(float)numVal))/((float)denom[k]+0.1);
 			}
