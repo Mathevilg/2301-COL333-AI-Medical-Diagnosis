@@ -10,8 +10,7 @@
 #include <cstring>
 #include <unordered_set>
 #include <unordered_map>
-#include <random>
-// #include <bits/stdc++.h>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -302,6 +301,7 @@ int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex, vecto
 		totalValues.push_back(par_node.get_nvalues());
 	}
 	int mult = 1, cpt_index = 0;
+	
 	for(int par_index = parents.size()-1; par_index>=0; par_index--)
 	{
 		cpt_index += (mult*value_indices[par_index]);
@@ -378,7 +378,7 @@ int main()
       		while (ss>>temp) {
 				// cout << temp << " " ;
 				l1.push_back(temp);
-				if (temp.size() == 3) {l2.push_back(true);}
+				if (temp.size() == 3) {l2.push_back(true); cout<<"yes\n"<<temp;}
 				else {l2.push_back(false); }
 			}
 			records.push_back(l1);
@@ -396,27 +396,30 @@ int main()
         int s = (*it).get_CPT().size();
 		vector<float> new_CPT;
 		for (int i=0; i<s; i++) {
-			new_CPT.push_back(1.0/(double)s);
+			new_CPT.push_back(1.0/(float)s);
 		}
 		(*it).set_CPT(new_CPT);
     }
 
 	// Running expectation minimization (EM)
-	for (int i=0; i<5; i++){
+	for (int i=0; i<4; i++){
 		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
 
-		map<int, vector<double> > record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
-		// bug(records.size());
+		map<int, vector<float> > record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
+		
 		// evaluate through all the data in the records
-		// bug(i);
+		bug(i);
 		for (int j=0; j<records.size(); j++){
+			
 			for (int k=0; k<numVar; k++){
 				// if found a (?) we need to allot it some discrete value
 				if (unknown[j][k]) {
-					// bug(j, k);
+					
 					// find the markov blanket
 					Graph_Node cur_var = *Alarm.get_nth_node(k);
 					vector<string> parents = (cur_var).get_Parents();
+					
+					
 					vector<int> children = (cur_var).get_children();
 					vector <Graph_Node> par_nodes;
 					vector<int> par_pos;
@@ -428,16 +431,17 @@ int main()
 					}
 					// we have found the markov blanket (mb) of (?) data, now calc prob.
 					int numVal = cur_var.get_nvalues();
-					vector<double> cur_prob;
+					vector<float> cur_prob;
 					vector<float> cur_cpt = cur_var.get_CPT();
-					double sum_prob = 0;
+					
+					float sum_prob = 0;
 					for(int valPos=0; valPos < numVal; valPos++)
 					{
 						//P(x = valPos)
 						int cpt_index = get_CPTindex(records[j], cur_var, valPos, par_nodes, par_pos);
 						//now we know which index to check inside cpt of cur_var for given row.
-						// bug(valPos, cpt_index);
-						double prob = cur_cpt[cpt_index];
+						
+						float prob = cur_cpt[cpt_index];
 						//now multiply with each child's P(child | parents(child))
 						for(int child: children)
 						{
@@ -464,38 +468,15 @@ int main()
 					
 					for(int valPos = 0; valPos < numVal; valPos++)
 					{
-						if(sum_prob!=0) cur_prob[valPos] /= sum_prob;
-						else cur_prob[valPos] = 1.0/(double)(numVal);
+						if(sum_prob) cur_prob[valPos] /= sum_prob;
+						else cur_prob[valPos] = ((float)1.0/(float)numVal);
 					}
+					// print(cur_prob);
 					record_p[j] = cur_prob;
 				}
 			}
 		}
 		// given all data, update the CPT
-        vector<vector<string> >records_new;
-        vector<float>weights;
-        for (int j=0; j<records.size(); j++){
-            if (record_p.count(j)==0){
-                records_new.push_back(records[j]);
-                weights.push_back(1.0);
-            }
-            else {
-                vector<double>w = record_p[j];
-                for (int s =0; s<w.size() ;s++) {
-                    for (int z=0; z<numVar; z++){
-                        if (unknown[j][z]){
-                            records[j][z] = (*(Alarm.get_nth_node(s))).get_values()[s];
-                            cout << "here\n";
-                            break;
-                        }
-                    }
-                    records_new.push_back(records[j]);
-                    weights.push_back((float)w[s]);
-                }
-            }
-        }
-        // print(weights);
-        // for (auto v: records_new) {print(v); cout <<"\n";}
 		
 		for(int k=0; k<numVar; k++){
 			Graph_Node cur = *(Alarm.get_nth_node(k));
@@ -512,11 +493,10 @@ int main()
 				par_values_map[Alarm.get_index(par)] = (*Alarm.search_node(par)).get_values();
 			}
 
-			vector<float> numerator(new_CPT.size(),0.0);
-			vector<float> denom(new_CPT.size(), 0.0);
+			vector<int> numerator(new_CPT.size(),0);
+			vector<int> denom(new_CPT.size(), 0);
 
-			for (int in =0; in<records_new.size(); in++){
-                vector<string> data = records_new[in];
+			for (auto data : records){
 				int pos = 0;
 				int multiplier = 1;
 				int iter = 0;
@@ -532,7 +512,7 @@ int main()
 					}
 					if (iter==cur_parents_index.size()-1) {
 						for (int jj = 0; jj<poss_val.size(); jj++) {
-							denom[pos+jj*multiplier]+= weights[in];
+							denom[pos+jj*multiplier]++;
 						}
 					}
 					pos += multiplier*num;
@@ -540,16 +520,14 @@ int main()
 					iter++;
 				}
 				reverse(cur_parents_index.begin(), cur_parents_index.end());
-				numerator[pos] += weights[in];
+				numerator[pos]++;
 			}
-			print(numerator);
-			print(denom);
 			for (int k=0; k<denom.size(); k++){
 				new_CPT[k] = ((float)numerator[k] + (0.1/(float)numVal))/((float)denom[k]+0.1);
 			}
 			Alarm.get_nth_node(k)->set_CPT(new_CPT);
-			print(new_CPT);
-            cout << "\n";
+			
+			cout << "\n";
 
 		}
 	}
