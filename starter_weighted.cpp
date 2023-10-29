@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <random>
-// #include <bits/stdc++.h>
+#include <bits/stdc++.h>
 
 using namespace std;
 
@@ -302,8 +302,6 @@ int get_CPTindex(vector<string> &row_record, Graph_Node var, int valIndex, vecto
 		totalValues.push_back(par_node.get_nvalues());
 	}
 	int mult = 1, cpt_index = 0;
-	// print(value_indices);
-	// print(totalValues);
 	for(int par_index = parents.size()-1; par_index>=0; par_index--)
 	{
 		cpt_index += (mult*value_indices[par_index]);
@@ -412,7 +410,6 @@ int main()
 		// evaluate through all the data in the records
 		// bug(i);
 		for (int j=0; j<records.size(); j++){
-			// print(unknown[j]);
 			for (int k=0; k<numVar; k++){
 				// if found a (?) we need to allot it some discrete value
 				if (unknown[j][k]) {
@@ -420,8 +417,6 @@ int main()
 					// find the markov blanket
 					Graph_Node cur_var = *Alarm.get_nth_node(k);
 					vector<string> parents = (cur_var).get_Parents();
-					// bug(cur_var.get_name());
-					// print(parents);
 					vector<int> children = (cur_var).get_children();
 					vector <Graph_Node> par_nodes;
 					vector<int> par_pos;
@@ -435,8 +430,6 @@ int main()
 					int numVal = cur_var.get_nvalues();
 					vector<double> cur_prob;
 					vector<float> cur_cpt = cur_var.get_CPT();
-					// print(cur_cpt);
-					// print(par_pos);
 					double sum_prob = 0;
 					for(int valPos=0; valPos < numVal; valPos++)
 					{
@@ -471,7 +464,8 @@ int main()
 					
 					for(int valPos = 0; valPos < numVal; valPos++)
 					{
-						cur_prob[valPos] /= sum_prob;
+						if(sum_prob!=0) cur_prob[valPos] /= sum_prob;
+						else cur_prob[valPos] = 1.0/(double)(numVal);
 					}
 					record_p[j] = cur_prob;
 				}
@@ -503,6 +497,11 @@ int main()
         // for (auto v: records_new) print(v);
 		
 		for(int k=0; k<numVar; k++){
+			for(auto pp: record_p)
+			{
+				bug(k, pp.first);
+				print(pp.second);
+			}
 			Graph_Node cur = *(Alarm.get_nth_node(k));
 			int numVal = cur.get_nvalues();
 			vector<float> new_CPT = cur.get_CPT();
