@@ -8,6 +8,8 @@
 #include <set>
 #include <map>
 #include <cstring>
+#include <unordered_set>
+#include <unordered_map>
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -401,7 +403,7 @@ int main()
     }
 
 	// Running expectation minimization (EM)
-	for (int i=0; i<1; i++){
+	for (int i=0; i<4; i++){
 		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
 
 		// map<pair<int,int>, vector<double> > record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
@@ -478,82 +480,58 @@ int main()
 		}
 		// given all data, update the CPT
 		
-		for(int k=0; k<numVar; k++){	
-			//update CPT[kth var] here
-			Graph_Node cur = *Alarm.get_nth_node(k);
-			vector<string> parents = cur.get_Parents();
-			// for each possible permutation of parent values, compute each entry of the cpt for cur variable.
-			vector<int> parents_nvalues;
-			vector<int> parents_index;
-			int num_of_perm = 1;
-			parents_nvalues.push_back(cur.get_nvalues());
-			parents_index.push_back(k);
-			int cur_nval = cur.get_nvalues();
-			num_of_perm *= cur_nval;
-			for (auto par : parents) {
-				int nval = (*(Alarm.search_node(par))).get_nvalues();
-				int a = Alarm.get_index(par);
-				parents_index.push_back(a);
-				num_of_perm *= nval;
-				parents_nvalues.push_back(nval);
-			}
-			
-			reverse(parents_nvalues.begin(), parents_nvalues.end());
-			
-			
-			vector<float> new_CPT;
-			for (int ii=0;  ii<num_of_perm; ii++) {
-				vector<int> perm;
-				int j=ii;
-				for (auto p :parents_nvalues) {
-					perm.push_back(j%p);
-					j /= p;
-				}
-				reverse(perm.begin(), perm.end());
-				print(perm);
-				print(parents_nvalues);
-				// now update (n-i)th value of the CPT table
-				int consistent_count = 0;
-				int conditional_count = 0;
-				for (auto data : records) {
-					bool possible = true;
-					int mm = 0;
-					for (auto indx : parents_index) {
-						if (data[indx]==(*(Alarm.get_nth_node(indx))).get_values()[perm[mm]]) {
-							mm++;
-							continue;
-						}
-						else {
-							possible = false;
-							break;
-						}
-						
-					}
-					if (possible) consistent_count++;
+		for(int k=0; k<numVar; k++){
+			Graph_Node cur = *(Alarm.get_nth_node(k));
+			int numVal = cur.get_nvalues();
+			vector<float> new_CPT = cur.get_CPT();
+			vector<string> cur_parents = cur.get_Parents();
+			vector<int> cur_parents_index;
+			cur_parents_index.push_back(k);
+			for (auto par : cur_parents) cur_parents_index.push_back(Alarm.get_index(par));
 
-					possible = true;
-					for (int nn=1; nn<parents_index.size(); nn++) {
-						if (data[parents_index[nn]]==(*(Alarm.get_nth_node(parents_index[nn]))).get_values()[perm[nn]]) {
-							continue;
-						}
-						else {
-							possible = false;
-							break;
-						}
-						
-					}
-					if (possible) conditional_count++;
-				}
-				cout << "consistent count : " << consistent_count << "\n";
-				cout << "conditional count: " << conditional_count << "\n";
-				new_CPT.push_back(((float)consistent_count + (0.1/(float)cur_nval))/((float)conditional_count+0.1));
-				// for (int pos = cur.get_nvalues()-1; pos>=0; pos--){}
+			unordered_map<int, vector<string> > par_values_map;
+			par_values_map[k] = cur.get_values();
+			for (auto par : cur_parents) {
+				par_values_map[Alarm.get_index(par)] = (*Alarm.search_node(par)).get_values();
 			}
-			print(new_CPT);
+
+			vector<int> numerator(new_CPT.size(),0);
+			vector<int> denom(new_CPT.size(), 0);
+
+			for (auto data : records){
+				int pos = 0;
+				int multiplier = 1;
+				int iter = 0;
+				reverse(cur_parents_index.begin(), cur_parents_index.end());
+				for (auto index : cur_parents_index) {
+					string value = data[index];
+					vector<string> poss_val = par_values_map[index];
+					int num = 0;
+					for (int jj = 0; jj<poss_val.size(); jj++) {
+						if (value==poss_val[jj]) {
+							num = jj; break;
+						}
+					}
+					if (iter==cur_parents_index.size()-1) {
+						for (int jj = 0; jj<poss_val.size(); jj++) {
+							denom[pos+jj*multiplier]++;
+						}
+					}
+					pos += multiplier*num;
+					multiplier *= poss_val.size();
+					iter++;
+				}
+				reverse(cur_parents_index.begin(), cur_parents_index.end());
+				numerator[pos]++;
+			}
+			// print(numerator);
+			// print(denom);
+			for (int k=0; k<denom.size(); k++){
+				new_CPT[k] = ((float)numerator[k] + (0.1/(float)numVal))/((float)denom[k]+0.1);
+			}
 			Alarm.get_nth_node(k)->set_CPT(new_CPT);
-			vector<float> ncpt = cur.get_CPT();
-			bug(k);
-			print(ncpt);
+			print(new_CPT);
+
 		}
 	}
 
