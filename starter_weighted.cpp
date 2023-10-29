@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <random>
-#include <bits/stdc++.h>
+// #include <bits/stdc++.h>
 
 using namespace std;
 
@@ -402,7 +402,7 @@ int main()
     }
 
 	// Running expectation minimization (EM)
-	for (int i=0; i<1; i++){
+	for (int i=0; i<5; i++){
 		// find (?) by evaluating expectation of each possible decrete value according to the 'latest' BN trained
 
 		map<int, vector<double> > record_p; //maps j,kth entry (for Var X) to {P(X = x1), P(X=x2), ..} vector of probabilities
@@ -483,8 +483,9 @@ int main()
                 vector<double>w = record_p[j];
                 for (int s =0; s<w.size() ;s++) {
                     for (int z=0; z<numVar; z++){
-                        if (records[j][z][1]=='?'){
+                        if (unknown[j][z]){
                             records[j][z] = (*(Alarm.get_nth_node(s))).get_values()[s];
+                            cout << "here\n";
                             break;
                         }
                     }
@@ -493,15 +494,10 @@ int main()
                 }
             }
         }
-        print(weights);
-        // for (auto v: records_new) print(v);
+        // print(weights);
+        // for (auto v: records_new) {print(v); cout <<"\n";}
 		
 		for(int k=0; k<numVar; k++){
-			for(auto pp: record_p)
-			{
-				bug(k, pp.first);
-				print(pp.second);
-			}
 			Graph_Node cur = *(Alarm.get_nth_node(k));
 			int numVal = cur.get_nvalues();
 			vector<float> new_CPT = cur.get_CPT();
@@ -544,7 +540,7 @@ int main()
 					iter++;
 				}
 				reverse(cur_parents_index.begin(), cur_parents_index.end());
-				numerator[pos]+= weights[in];
+				numerator[pos] += weights[in];
 			}
 			print(numerator);
 			print(denom);
@@ -552,7 +548,8 @@ int main()
 				new_CPT[k] = ((float)numerator[k] + (0.1/(float)numVal))/((float)denom[k]+0.1);
 			}
 			Alarm.get_nth_node(k)->set_CPT(new_CPT);
-			// print(new_CPT);
+			print(new_CPT);
+            cout << "\n";
 
 		}
 	}
