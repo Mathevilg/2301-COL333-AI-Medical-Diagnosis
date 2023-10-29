@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <random>
-#include <bits/stdc++.h>
+// #include <bits/stdc++.h>
 
 using namespace std;
 
@@ -482,18 +482,25 @@ int main()
         vector<float>weights;
         for (int j=0; j<records.size(); j++){
             if (record_p.count(j)==0){
-                records_new.push_back(records[i]);
+                records_new.push_back(records[j]);
                 weights.push_back(1.0);
             }
             else {
-                vector<double>we = record_p[j];
-                for (auto w : we) {
-                    records_new.push_back(records[i]);
-                    weights.push_back((float)w);
+                vector<double>w = record_p[j];
+                for (int s =0; s<w.size() ;s++) {
+                    for (int z=0; z<numVar; z++){
+                        if (records[j][z][1]=='?'){
+                            records[j][z] = (*(Alarm.get_nth_node(s))).get_values()[s];
+                            break;
+                        }
+                    }
+                    records_new.push_back(records[j]);
+                    weights.push_back((float)w[s]);
                 }
             }
         }
-        // print(records_new);
+        print(weights);
+        // for (auto v: records_new) print(v);
 		
 		for(int k=0; k<numVar; k++){
 			Graph_Node cur = *(Alarm.get_nth_node(k));
@@ -510,8 +517,8 @@ int main()
 				par_values_map[Alarm.get_index(par)] = (*Alarm.search_node(par)).get_values();
 			}
 
-			vector<int> numerator(new_CPT.size(),0);
-			vector<int> denom(new_CPT.size(), 0);
+			vector<float> numerator(new_CPT.size(),0.0);
+			vector<float> denom(new_CPT.size(), 0.0);
 
 			for (int in =0; in<records_new.size(); in++){
                 vector<string> data = records_new[in];
