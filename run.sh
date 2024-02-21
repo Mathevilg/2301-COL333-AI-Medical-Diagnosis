@@ -1,6 +1,5 @@
 #!/bin/bash
 
-alarm=${1}
-data=${1}
+data=${2}
 
-./a4 "$alarm" "$data" "solved_alarm.bif"
+./a4 "$data"
